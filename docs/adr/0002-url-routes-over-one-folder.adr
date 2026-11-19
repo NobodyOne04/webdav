@@ -1,0 +1,23 @@
+# 0002. File operations as URL routes over one folder, with Django REST framework
+
+- Status: Accepted
+- Date: 2026-11-19
+
+Every operation is a route whose path names a file or folder under `fileManager/StaticFolder/`,
+handled by a DRF function view that calls `os` directly.
+
+## Technical details
+- **Routes** (`fileManager/urls.py`): `''` and `<path:id>` list (`os.listdir`),
+  `create/<path:id>` makes a folder (`os.mkdir`, GET), `delete/<path:id>` removes an empty
+  folder (`os.rmdir`, DELETE; files and non-empty folders are refused), `download/<path:id>`
+  streams a file as an attachment, matching names without their extension.
+- **Responses**: DRF `Response` with lists or `{"response": message}`; missing paths answer
+  with a message, not a 404.
+- **Known limits**: no path normalisation, so `..` escapes the folder; state-changing GET;
+  downloads open files in text mode with a fixed `application/msword` type and file name;
+  `DEBUG = True` and a committed `SECRET_KEY`. Acceptable for a local lab only.
+
+## Technologies and alternatives
+- Involved: Django 2.2.7, djangorestframework 3.10.3.
+- Alternatives: a real WebDAV server (wsgidav); Django's `FileResponse` and
+  `safe_join` (would fix downloads and traversal).
