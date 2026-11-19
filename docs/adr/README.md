@@ -5,4 +5,5 @@ Decisions behind this project. Format and statuses: [0001](0001-record-decisions
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-record-decisions-as-adr-files.adr) | Record architecture decisions as .adr files | Accepted |
-| [0002](0002-url-routes-over-one-folder.adr) | File operations as URL routes over one folder, with Django REST framework | Accepted |
+| [0002](0002-url-routes-over-one-folder.adr) | File operations as URL routes over one folder, with Django REST framework | Superseded by [0003](0003-hexagonal-file-manager.adr) |
+| [0003](0003-hexagonal-file-manager.adr) | Hexagonal file manager: core rules, a FileStore port, Django 5 JSON adapter | Accepted |
