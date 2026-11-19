@@ -1,6 +1,6 @@
 # 0002. File operations as URL routes over one folder, with Django REST framework
 
-- Status: Accepted
+- Status: Superseded by [0003](0003-hexagonal-file-manager.adr)
 - Date: 2026-11-19
 
 Every operation is a route whose path names a file or folder under `fileManager/StaticFolder/`,
