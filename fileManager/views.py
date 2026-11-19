@@ -1,9 +1,20 @@
-from django.http import HttpResponse
+from django.http import FileResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 import os
 
-STATIC_PATH = os.path.dirname(__file__) +'/'+'StaticFolder'
+STATIC_PATH = os.path.realpath(os.path.join(os.path.dirname(__file__), 'StaticFolder'))
+
+
+def resolve(id):
+    """The absolute path for id, or None if it would leave STATIC_PATH (e.g. via '..' or a symlink)."""
+    path = os.path.realpath(os.path.join(STATIC_PATH, str(id)))
+    return path if os.path.commonpath([path, STATIC_PATH]) == STATIC_PATH else None
+
+
+def outside(id):
+    return Response({'response': 'path ' + str(id) + ' is outside the managed folder'}, status=400)
+
 
 @api_view(['GET'])
 def index(request):
@@ -11,25 +22,31 @@ def index(request):
 
 @api_view(['GET'])
 def view(request, id):
-    if os.path.exists(STATIC_PATH+'/'+str(id)):
-        return Response(os.listdir(STATIC_PATH+'/'+str(id)))
+    path = resolve(id)
+    if path is None:
+        return outside(id)
+    if os.path.isdir(path):
+        return Response(os.listdir(path))
     else:
-        return Response({'response':'path '+ STATIC_PATH+'/'+str(id) + ' is not exist'})
+        return Response({'response':'path '+ str(id) + ' is not exist'})
 
 @api_view(['GET'])
 def create(request, id):
-    dirName = STATIC_PATH + '/' +id
+    dirName = resolve(id)
+    if dirName is None:
+        return outside(id)
     if not os.path.exists(dirName):
         os.mkdir(dirName)
         response = "Directory " + str(id) +  " Created "
-    else:    
+    else:
         response = "Directory " + str(id) + " already exists"
     return Response({"response":response})
 
 @api_view(['DELETE'])
 def delete(request, id):
-    pathToFile = STATIC_PATH + '/' + str(id)
-    print(pathToFile)
+    pathToFile = resolve(id)
+    if pathToFile is None or pathToFile == STATIC_PATH:
+        return outside(id)
     if os.path.exists(pathToFile):
         if os.path.isfile(pathToFile): response = "You try to delete file"
         elif os.listdir(pathToFile) == []:
@@ -37,7 +54,7 @@ def delete(request, id):
             response = "Directory " + str(id) +  " Deleted "
         else:
             response = "Directory is not empty"
-    else:    
+    else:
         response = "Directory not exists " + str(id)
     return Response({"response":response})
 
@@ -45,11 +62,10 @@ def delete(request, id):
 def download(request, id):
     for file in os.listdir(STATIC_PATH):
         if id == file.split('.')[0]: id = file
-    path_to_file = STATIC_PATH + '/' + str(id)
-    if os.path.exists(path_to_file):
-        FilePointer = open(path_to_file,"r")
-        response = HttpResponse(FilePointer,content_type='application/msword')
-        response['Content-Disposition'] = 'attachment; filename=NameOfFile'
-        return response
+    path_to_file = resolve(id)
+    if path_to_file is None:
+        return outside(id)
+    if os.path.isfile(path_to_file):
+        return FileResponse(open(path_to_file, 'rb'), as_attachment=True, filename=os.path.basename(path_to_file))
     else:
-        return Response({'response':'path '+path_to_file+' is not exist'})
+        return Response({'response':'path '+str(id)+' is not exist'})

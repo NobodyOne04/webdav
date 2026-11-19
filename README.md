@@ -23,9 +23,12 @@ All paths are relative to `fileManager/StaticFolder/`.
 | DELETE | `/delete/<path>` | delete an **empty** folder (files are refused) |
 | GET | `/download/<name>` | download a file (the extension may be omitted) |
 
-Responses are JSON (`{"response": "…"}` for messages), downloads are attachments.
+Responses are JSON (`{"response": "…"}` for messages), downloads are binary attachments
+with the real file name. Paths that would leave the folder (`..`, symlinks) get `400`.
 
-**Lab code, not safe to expose**: paths aren't sanitised (`..` leaves the folder), folders are
-created with GET, and settings are development-only (`DEBUG = True`, committed `SECRET_KEY`).
+Still a lab, keep it local: folders are created with GET and `DEBUG = True`. Set
+`DJANGO_SECRET_KEY` if it ever runs anywhere else (otherwise each start uses a random key).
+
+Tests: `python3 manage.py test fileManager`.
 
 Decisions: [docs/adr](docs/adr/README.md).

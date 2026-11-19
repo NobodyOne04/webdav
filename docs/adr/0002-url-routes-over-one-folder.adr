@@ -13,9 +13,11 @@ handled by a DRF function view that calls `os` directly.
   streams a file as an attachment, matching names without their extension.
 - **Responses**: DRF `Response` with lists or `{"response": message}`; missing paths answer
   with a message, not a 404.
-- **Known limits**: no path normalisation, so `..` escapes the folder; state-changing GET;
-  downloads open files in text mode with a fixed `application/msword` type and file name;
-  `DEBUG = True` and a committed `SECRET_KEY`. Acceptable for a local lab only.
+- **Safety** (fixed 2026-11-19): `resolve()` turns every path into a real path and refuses
+  (400) anything outside `StaticFolder`, including `..` and symlinks; downloads are
+  `FileResponse` in binary with the real file name; `SECRET_KEY` comes from
+  `DJANGO_SECRET_KEY` (random per start without it). Tests in `fileManager/tests.py`.
+- **Known limits**: state-changing GET for `create`, `DEBUG = True`. Local use only.
 
 ## Technologies and alternatives
 - Involved: Django 2.2.7, djangorestframework 3.10.3.

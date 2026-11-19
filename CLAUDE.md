@@ -6,8 +6,8 @@ A 2019 university lab: Django + DRF routes to list, create, delete and download 
 ```sh
 pip install -r requiraments.txt        # note the spelling
 python3 manage.py runserver
+python3 manage.py test fileManager   # list, download, create/view/delete, traversal refused
 ```
-`fileManager/tests.py` is the empty Django stub.
 
 ## Layout
 - `Lab/`: Django project (settings, root urls, wsgi).
@@ -17,5 +17,6 @@ python3 manage.py runserver
 
 ## Conventions
 - Read the ADR before changing a recorded decision; commit subjects carry its number.
-- Not safe to expose (path traversal, GET creates, dev settings): keep it local.
+- Every path goes through `resolve()` in `views.py`, which refuses anything outside `StaticFolder`.
+- Keep it local: GET creates folders and `DEBUG = True`. `SECRET_KEY` comes from `DJANGO_SECRET_KEY`.
 - Archived lab: docs or small fixes only unless asked.
