@@ -1,0 +1,46 @@
+# 0003. Hexagonal file manager: core rules, a FileStore port, Django 5 JSON adapter
+
+- Status: Accepted
+- Date: 2026-11-20
+- Supersedes: [0002](0002-url-routes-over-one-folder.adr)
+
+The file-manager rules move into a framework-free core behind a `FileStore` port; local disk
+and Django become adapters, wired in a composition root. Chosen by the owner on 2026-11-20
+(hexagonal like personal-ai, modern tooling, tests without CI).
+
+## Technical details
+- **Problem**: the 2019 views called `os` directly, so the rules (stay inside the folder,
+  delete only empty folders, downloads by name without extension) were spread through HTTP
+  code and only testable through Django; the pins (Django 2.2, DRF 3.10) don't install on
+  current Python.
+- **Layout** (`src/filemanager/`):
+  - `core/domain/`: `RelPath` (a path inside the root: no absolute paths, no `..` segments,
+    normalised; `RelPath.parse()` raises `OutsideRoot`), `Entry(name, is_dir)`, and the errors
+    `NotFound`, `OutsideRoot`, `AlreadyExists`, `NotEmpty`, `NotADirectory`, `IsAFile`.
+  - `core/ports/store.py`: `FileStore` protocol: `kind(path)` (`"dir"`, `"file"` or
+    `None`), `list(path)`, `make_dir(path)`, `remove_dir(path)`, `open(path)` (binary).
+  - `core/application/service.py`: `FileManager(store)`: `list`, `create`, `delete` (empty
+    folders only; files refused), `download` (a name without extension matches the first
+    file whose stem equals it).
+  - `adapters/outbound/local.py`: `LocalFileStore(root)`: also resolves symlinks and refuses
+    anything whose real path leaves the root (`OutsideRoot`), a second line behind `RelPath`.
+  - `adapters/inbound/web/`: Django views returning JSON; domain errors map to HTTP codes
+    (`NotFound` 404, `OutsideRoot` 400, `AlreadyExists` / `NotEmpty` / `IsAFile` 409,
+    `NotADirectory` 400).
+  - `composition.py`: `file_manager()`, cached, over `LocalFileStore($FILEMANAGER_ROOT)`
+    (default `data/` in the repo, which holds `test.txt`).
+- **API**: `GET /` and `GET /<path>` list (`[{"name", "is_dir"}]`); `POST /create/<path>`
+  (was GET: state changes need POST); `DELETE /delete/<path>`; `GET /download/<name>` streams
+  the file as an attachment with its real name. Errors are `{"error": "..."}`. CSRF is exempt:
+  it's a JSON API without cookies or sessions.
+- **Django project**: `project/`; `SECRET_KEY` from `DJANGO_SECRET_KEY`, `DEBUG` from
+  `DJANGO_DEBUG`, `ALLOWED_HOSTS` from `DJANGO_ALLOWED_HOSTS`; no database. DRF is gone.
+- **Tests** (pytest): core against an in-memory fake store, `LocalFileStore` against a
+  temporary folder (including a symlink pointing outside), web through Django's test client.
+- **Tooling**: Python 3.12+, uv, ruff, pytest, `make check`. No CI, by choice.
+
+## Technologies and alternatives
+- Involved: Python 3.12+, Django 5.2, uv, ruff, pytest.
+- Alternatives: keep DRF (one dependency for what `JsonResponse` does here); FastAPI
+  (fits a JSON API, but the repo and course are Django); a real WebDAV server such as
+  wsgidav (a different project).

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Changed
+- Redesigned hexagonally (ADR 0003): framework-free core with a `FileStore` port, local-disk and Django 5.2 adapters; Python 3.12+ with uv, ruff and pytest
+- `create` is `POST` (was GET); errors are JSON with proper status codes; listings show `name` and `is_dir`, folders first
+- The managed folder is `data/` (or `FILEMANAGER_ROOT`), was `fileManager/StaticFolder/`
+
+### Removed
+- Django REST framework and the old `Lab` / `fileManager` Django layout
+
 ### Added
 - README in English, CLAUDE.md, changelog and ADRs
 
